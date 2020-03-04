@@ -19,32 +19,7 @@
 			</el-form-item>
 		</el-form>
 	</div>
-<!--	<div class="toolbar" style="float:right;padding-top:10px;padding-right:15px;">
-		<el-form :inline="true" :size="size">
-			<el-form-item>
-				<el-button-group>
-				<el-tooltip content="刷新" placement="top">
-					<el-button icon="fa fa-refresh" @click="findPage(null)"></el-button>
-				</el-tooltip>
-				<el-tooltip content="列显示" placement="top">
-					<el-button icon="fa fa-filter" @click="displayFilterColumnsDialog"></el-button>
-				</el-tooltip>
-				<el-tooltip content="导出" placement="top">
-					<el-button icon="fa fa-file-excel-o"></el-button>
-				</el-tooltip>
-				</el-button-group>
-			</el-form-item>
-		</el-form>
-		&lt;!&ndash;表格显示列界面&ndash;&gt;
-		<table-column-filter-dialog ref="tableColumnFilterDialog" :columns="columns"
-			@handleFilterColumns="handleFilterColumns">
-		</table-column-filter-dialog>
-	</div>-->
 	<!--表格内容栏-->
-<!--	<kt-table permsEdit="sys:user:edit" permsDelete="sys:user:delete"
-		:data="pageResult" :columns="filterColumns"
-		@findPage="findPage" @handleEdit="handleEdit" @handleDelete="handleDelete">
-	</kt-table>-->
     <div class="content-wrapper" style="margin-top: 50px" >
       <el-table
                 :data="allCourseChoosed.slice((currentPage-1)*pagesize,currentPage*pagesize)"
@@ -96,10 +71,19 @@
           label="操作"
         >
           <template slot-scope="scope">
-            <el-button type="text" size="small" v-if="scope.row.status == '0'" @click="choosed(scope.row)">选课</el-button>
-            <el-tag v-else type="warning" size="mini">
-              已满
-            </el-tag>
+            <div>
+              <div v-if="judgeExist(scope.row)">
+                <el-tag type="success" size="mini">
+                已选
+              </el-tag> </div>
+              <div v-else>
+                <el-button type="text" size="small" v-if="scope.row.status == '0'" @click="choosed(scope.row)">选课</el-button>
+                <el-tag v-else type="warning" size="mini">
+                  已满
+                </el-tag>
+              </div>
+            </div>
+
           </template>
         </el-table-column>
       </el-table>
@@ -134,13 +118,26 @@ export default {
       pagesize:10,
       currentPage:1,
       total:allCourseChoosed.length,
-      allCourseChoosed: allCourseChoosed
+      allCourseChoosed: allCourseChoosed,
+      haseCourse: []
 		}
 	},
   computed:{
     ...mapState({
       user: state=>state.user.users,
     })
+  },
+  filters: {
+    existCourse: function (value) {
+       if(this.haseCourse && this.haseCourse.length > 0){
+           return this.haseCourse.find(item=>{
+             item.courseId = value.courseId
+           })
+       }else{
+         return false
+       }
+      return value.charAt(0).toUpperCase() + value.slice(1)
+    }
   },
 	methods: {
     // 分页操作
@@ -183,6 +180,7 @@ export default {
         courseSituation.forEach(item=>{
           if(item.name === this.user.loginName){
             item.course.push(row)
+            console.log(item)
           }else{
             let chosedArr =[]
             chosedArr.push(row)
@@ -193,6 +191,8 @@ export default {
             courseSituation.push(stu)
           }
         })
+        localStorage.setItem('courseSituation',JSON.stringify(courseSituation))
+        this.getHasedCourse()
       }
       else{
         let newobj = [] , newchosedArr =[];
@@ -205,7 +205,6 @@ export default {
       }
     },
     choosed(row){
-      console.log(row)
       this.$confirm(`确认选${row.courseName}课程吗?`, '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -222,11 +221,32 @@ export default {
           message: '已取消选课'
         });
       });
+    },
+    // 获取已选课程
+    getHasedCourse(){
+      let courseSituation = JSON.parse(localStorage.getItem('courseSituation'))
+      if(courseSituation){
+        courseSituation.forEach(item=>{
+          if(item.name === this.user.loginName){
+            this.haseCourse = item.course;
+          }
+        })
+      }
+
+    },
+    judgeExist(val){
+      let a =''
+      if(this.haseCourse && this.haseCourse.length > 0){
+       a=   this.haseCourse.find(item=>{
+          return item.courseId === val.courseId
+        })
+      }
+      return a
     }
 
 	},
 	mounted() {
-
+this.getHasedCourse()
 	}
 }
 </script>

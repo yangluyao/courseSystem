@@ -23,14 +23,14 @@ export default {
     window.addEventListener("beforeunload", () => {
       sessionStorage.setItem("store", JSON.stringify(this.$store.state));
     });
-    this.$router.beforeEach((to, from, next) => {
+ /*   this.$router.beforeEach((to, from, next) => {
       if (to.meta && Object.keys(to.meta).length > 0) {
         this.$store.commit("setCurrentMenuId", to.meta.index);
       } else {
         this.$store.commit("setCurrentMenuId", "");
       }
       next();
-    });
+    });*/
   },
 }
 </script>
