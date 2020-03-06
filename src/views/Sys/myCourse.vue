@@ -285,6 +285,7 @@ export default {
         this.allCourseChoosed = []
       }*/
     },
+
     handleClick(tab, event) {
       console.log(tab, event);
     },

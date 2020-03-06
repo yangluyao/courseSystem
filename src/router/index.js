@@ -7,10 +7,10 @@ import Intro from '@/views/Intro/Intro'
 import Generator from '@/views/Generator/Generator'
 
 // 测试路由
-import MenuDisp from '@/views/Self/MenuDisp'
-import text from '@/views/text/text'
 import courseCenter from '@/views/Sys/courseCenter'
 import myCourse from '@/views/Sys/myCourse'
+import courseSet from '@/views/teacher/courseSet'
+import addCourse from '@/views/admin/addCourse'
 import api from '@/http/api'
 import store from '@/store'
 import { getIFramePath, getIFrameUrl } from '@/utils/iframe'
@@ -37,7 +37,7 @@ const router = new Router({
           name:'我的课程',
           component:  myCourse,
           meta: {
-            icon: 'fa fa-home fa-lg',
+            icon: 'iconfont iconcheck',
             index: 0
           }
         },{
@@ -45,7 +45,25 @@ const router = new Router({
           name:'选课中心',
           component:courseCenter,
           meta: {
-            icon: 'fa fa-home fa-lg',
+            icon: 'iconfont iconaccount',
+            index: 0
+          }
+        },{
+          path:'/courseSet',
+          name:'课程管理',
+          component:courseSet,
+          meta: {
+            icon: 'iconfont iconaccount',
+            index: 0
+          }
+        },
+        //admin/admin/addCourse
+        {
+          path: '/admin/addCourse',
+          name: '课程管理',
+          component: addCourse,
+          meta: {
+            icon: 'iconfont iconaccount',
             index: 0
           }
         }

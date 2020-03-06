@@ -1,62 +1,4 @@
 
-/*export const workData = {
-  firstWork: {
-    companyName: ,
-    time: ,
-    department: ,
-    position: ,
-    project: [
-      {
-        name: ,
-        time: ,
-        content: ,
-        technology:
-      }
-    ]
-  },
-  secondWork: {
-    companyName: ,
-    time: ,
-    department: ,
-    position: ,
-    project: [
-      {
-        name: ,
-        time: ,
-        content: ,
-        technology:
-      }
-    ]
-  },
-  thirdWork: {
-    companyName: ,
-    time: ,
-    department: ,
-    position: ,
-    project: [
-      {
-        name: ,
-        time: ,
-        content: ,
-        technology:
-      }
-    ]
-  },
-  fourthWork: {
-    companyName: ,
-    time: ,
-    department: ,
-    position: ,
-    project: [
-      {
-        name: ,
-        time: ,
-        content: ,
-        technology:
-      }
-    ]
-  }
-}*/
 
 export const loginInfo = [
   {
@@ -67,7 +9,7 @@ export const loginInfo = [
     menuArr: [
       {
         menuName: '选课中心',
-        menuUrl:'/courseCenter' ,
+        menuUrl:'/admin/addCourse' ,
         menuId: '0001',
         icon:''
       },{
@@ -90,21 +32,21 @@ export const loginInfo = [
     pwd:'123456',
     menuArr: [
       {
-        menuName: '选课中心',
-        menuUrl:'/courseCenter' ,
+        menuName: '课程管理',
+        menuUrl:'/courseSet' ,
         menuId: '1111',
-        icon:''
+        icon:'iconfont iconxuanxiang'
       },{
         menuName: '我的选课',
         menuUrl:'/courseCenter' ,
         menuId:'1112' ,
-        icon:''
+        icon:'iconfont iconaccount'
       },
       {
         menuName: '首页',
         menuUrl:'/' ,
         menuId:'111111' ,
-        icon:''
+        icon:'iconfont iconhome'
       }
     ]
   },
