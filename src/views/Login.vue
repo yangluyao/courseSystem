@@ -2,32 +2,18 @@
   <el-form :model="loginForm" :rules="fieldRules" ref="loginForm" label-position="left" label-width="0px" class="demo-ruleForm login-container">
     <span class="tool-bar">
       <!-- 主题切换 -->
-      <theme-picker style="float:right;" class="theme-picker" :default="themeColor" @onThemeChange="onThemeChange"></theme-picker>
+      <!--<theme-picker style="float:right;" class="theme-picker" :default="themeColor" @onThemeChange="onThemeChange"></theme-picker>-->
       <!-- 语言切换 -->
       <!-- <lang-selector class="lang-selector"></lang-selector>    -->
     </span>
-    <h2 class="title" style="padding-left:22px;" >系统登录</h2>
+    <h2 class="title" style="padding-left:22px;" >选课系统登录</h2>
     <el-form-item prop="account">
       <el-input type="text" v-model="loginForm.account" auto-complete="off" placeholder="账号"></el-input>
     </el-form-item>
     <el-form-item prop="password">
       <el-input type="password" v-model="loginForm.password" auto-complete="off" placeholder="密码"></el-input>
     </el-form-item>
-    <el-form-item >
-      <el-col :span="12">
-        <el-form-item prop="captcha">
-          <el-input type="test" v-model="loginForm.captcha" auto-complete="off" placeholder="验证码, 单击图片刷新"
-            style="width: 100%;">
-          </el-input>
-        </el-form-item>
-      </el-col>
-      <el-col class="line" :span="1">&nbsp;</el-col>
-      <el-col :span="11">
-        <el-form-item>
-            <img style="width: 100%;" class="pointer" :src="loginForm.src" @click="refreshCaptcha">
-        </el-form-item>
-      </el-col>
-    </el-form-item>
+
     <!-- <el-checkbox v-model="checked" checked class="remember">记住密码</el-checkbox> -->
     <el-form-item style="width:100%;">
       <el-button type="primary" style="width:48%;" @click.native.prevent="reset">重 置</el-button>
@@ -42,7 +28,7 @@ import { mapState } from 'vuex'
 import Cookies from "js-cookie"
 import ThemePicker from "@/components/ThemePicker"
 import LangSelector from "@/components/LangSelector"
-import { loginInfo } from  '../utils/allData.js'
+import { loginInfo,allStudent,allTeacher,allRoom,adminCourse, studentMenu,teacherMenu,superiorTeacherMenu,adminMenu } from  '../utils/allData.js'
 export default {
   name: 'Login',
   components:{
@@ -73,46 +59,85 @@ export default {
     login() {
       this.loading = true
       let userInfo = {account:this.loginForm.account, password:this.loginForm.password, captcha:this.loginForm.captcha}
-       console.log(loginInfo)
-     /* this.$api.login.login(userInfo).then((res) => {
-          if(res.msg != null) {
-            this.$message({
-              message: res.msg,
-              type: 'error'
-            })
-          } else {
-            Cookies.set('token', res.data.token) // 放置token到Cookie
-            sessionStorage.setItem('user', userInfo.account) // 保存用户到本地会话
-            this.$store.commit('menuRouteLoaded', false) // 要求重新加载导航菜单
-            this.$router.push('/')  // 登录成功，跳转到主页
-          }
-          this.loading = false
-        }).catch((res) => {
-          this.$message({
-          message: res.message,
-          type: 'error'
+      let teacher =JSON.parse(localStorage.getItem('allTeacher'))
+      let student =JSON.parse(localStorage.getItem('allStudent'))
+     let isLogin = {}
+     let haveAccount = false
+      if(this.loginForm.account === 'admin'){
+        isLogin = {
+          loginName: 'admin',
+          roleId:'admin'
+        }
+        haveAccount = true
+      }
+      else if(this.loginForm.account === 'supTeacher'){
+        isLogin = {
+          loginName: 'supTeacher',
+          roleId:'supTeacher'
+        }
+        haveAccount = true
+      }
+      else{
+        let loginMoreInfo = {}
+        let existLogin =  teacher.some(loginer=>{
+          loginMoreInfo = loginer
+         return  loginer.teacherName === this.loginForm.account
+        })
+        if(existLogin){
+          isLogin = loginMoreInfo
+          haveAccount = true
+        }else {
+          let studentLogin =  student.some(loginer=>{
+            loginMoreInfo = loginer
+            return  loginer.studentName === this.loginForm.account
           })
-        });*/
-      let currentLogin = {}
-    let existLogin= loginInfo.some(loginer=>{
-       if(loginer.loginName === this.loginForm.account){
-         currentLogin = loginer
-        return loginer
-       }
-     })
-      if(existLogin){
-        this.loading = false
-        if(currentLogin.pwd == this.loginForm.password){
-          sessionStorage.setItem('user',currentLogin)
-          this.$store.commit('setUserInfo',currentLogin)
-          this.$store.commit('setNavTree',currentLogin.menuArr)
+          if(studentLogin){
+       /*     isLogin= {
+              loginName: this.loginForm.account,roleId:'student',roomId:loginMoreInfo.studentRoomId,roomName:loginMoreInfo.studentRoomName
+            }*/
+            isLogin = loginMoreInfo
+            haveAccount = true
+          }else{
+            haveAccount = false
+          }
+        }
+      }
+
+      if(haveAccount){
+        let pwd=''
+        let menu = []
+        switch (isLogin.roleId) {
+          case 'admin':
+            pwd = 'admin'
+            menu = adminMenu
+            break;
+          case 'student':
+            pwd = 'student'
+            menu=studentMenu
+            break;
+          case 'teacher':
+            pwd = 'teacher'
+            menu = teacherMenu
+            break;
+          case 'supTeacher':
+            pwd = 'supTeacher'
+            menu =superiorTeacherMenu
+            break;
+        }
+        if(this.loginForm.password === pwd){
+          this.loading = false
+          this.$store.commit('setUserInfo',isLogin)
+          this.$store.commit('setNavTree',menu)
           this.$router.push('/')
         }else{
+          this.loading = false
           this.$message({
             message: '密码错误',
             type: 'error'
           })
         }
+
+
       }else{
         this.loading = false
         this.$message({
@@ -130,10 +155,30 @@ export default {
     // 切换主题
     onThemeChange: function(themeColor) {
       this.$store.commit('setThemeColor', themeColor)
+    },
+    // 学生 教师，课程 信息初始化
+    initStaticData(){
+      let localAllRoom = JSON.parse(localStorage.getItem('allRoom'))
+      let localAllStudent = JSON.parse(localStorage.getItem('allStudent'))
+      let localAllTeacher = JSON.parse(localStorage.getItem('allTeacher'))
+      let localadminCourse = JSON.parse(localStorage.getItem('adminCourse'))
+      if( !localAllRoom){
+        localStorage.setItem('allRoom',JSON.stringify(allRoom))
+      }
+      if( !localAllStudent){
+        localStorage.setItem('allStudent',JSON.stringify(allStudent))
+      }
+      if( !localAllTeacher){
+        localStorage.setItem('allTeacher',JSON.stringify(allTeacher))
+      }
+      if( !localadminCourse){
+        localStorage.setItem('adminCourse',JSON.stringify(adminCourse))
+      }
+
     }
   },
   mounted() {
-    this.refreshCaptcha()
+    this.initStaticData()
 
 
   },

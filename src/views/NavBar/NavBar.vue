@@ -3,7 +3,7 @@
     <!-- logo -->
     <div class="logo" :style="{'background-color':themeColor}" :class="collapse?'menu-bar-collapse-width':'menu-bar-width'"
       @click="$router.push('/')">
-        <img v-if="collapse" src="@/assets/logo.png"/> <div>{{collapse?'':appName}}</div>
+        <img v-if="collapse" src="@/assets/logo.png"/> <div>{{collapse?'':'选课管理系统'}}</div>
     </div>
     <!-- 导航菜单 -->
     <el-menu ref="navmenu" default-active="1" :class="collapse?'menu-bar-collapse-width':'menu-bar-width'"
@@ -29,14 +29,7 @@ export default {
       collapse: state=>state.app.collapse,
       navTree: state=>state.menu.navTree
     }),
-    mainTabs: {
-      get () { return this.$store.state.tab.mainTabs },
-      set (val) { this.$store.commit('updateMainTabs', val) }
-    },
-    mainTabsActiveName: {
-      get () { return this.$store.state.tab.mainTabsActiveName },
-      set (val) { this.$store.commit('updateMainTabsActiveName', val) }
-    }
+
   },
   watch: {
     $route: 'handleRoute'
@@ -57,16 +50,7 @@ export default {
     // 路由操作处理
     handleRoute (route) {
       // tab标签页选中, 如果不存在则先添加
-      var tab = this.mainTabs.filter(item => item.name === route.name)[0]
-      if (!tab) {
-        tab = {
-          name: route.name,
-          title: route.name,
-          icon: route.meta.icon
-        }
-        this.mainTabs = this.mainTabs.concat(tab)
-      }
-      this.mainTabsActiveName = tab.name
+
       // 切换标签页时同步更新高亮菜单
       if(this.$refs.navmenu != null) {
         this.$refs.navmenu.activeIndex = '' + route.meta.index

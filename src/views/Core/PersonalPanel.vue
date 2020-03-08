@@ -10,17 +10,8 @@
 
     </div>
 
-    <div class="main-operation">
-        <span class="main-operation-item">
-          <el-button size="small" icon="fa fa-male"> 个人中心</el-button>
-        </span>
-        <span class="main-operation-item">
-          <el-button size="small" icon="fa fa-key"> 修改密码</el-button>
-        </span>
-    </div>
-
     <div class="personal-footer" @click="logout">
-      <li class="fa fa-sign-out"></li>
+      <br>
       {{$t("common.logout")}}
     </div>
   </div>

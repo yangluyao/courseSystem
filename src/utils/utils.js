@@ -26,3 +26,23 @@ export function fuzzyQuery(list, keyWord,prop) {
   }
   return arr;
 }
+
+export function getNameById(Id,copareId,data){
+  let ARR = data.filter(item=>{
+    if(item[copareId] === Id){
+      return item
+    }
+  })
+  return ARR
+}
+//a:[1,2,3,4,5,6], b:[2,3]  =>c:[1,4,5,6]
+export function getDiffer(arr1,arr2,typeName){
+  return Object.values(arr1.concat(arr2).reduce((acc,cur) => {
+    if (acc[cur[typeName]] && acc[cur[typeName]][typeName] === cur[typeName]) {
+      delete acc[cur[typeName]];
+    }else{
+      acc[cur[typeName]] = cur;
+    }
+    return acc ;
+  },{}));
+}

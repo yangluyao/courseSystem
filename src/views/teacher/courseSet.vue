@@ -3,36 +3,27 @@
   <!--教师角色的 负责维护课程页-->
   <div class="page-container">
     <!--工具栏-->
-    <div class="toolbar" style="float:left;padding-top:55px;padding-left:15px;">
+    <div class="toolbar">
       <el-form :inline="true" :model="filters" :size="size">
         <el-form-item>
           <el-input size="small" v-model="filters.name" placeholder="课程名"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button  size="small" >搜索</el-button>
+          <el-button  size="small" @click="filterSearch">搜索</el-button>
         </el-form-item>
         <el-form-item>
-          <el-button  size="small" type="primary" @click="addCourse">新增</el-button>
+          <el-button  size="small" type="primary" @click="addSelectCourse">新增</el-button>
         </el-form-item>
       </el-form>
     </div>
     <!--表格内容栏-->
- <!--   <kt-table permsEdit="sys:role:edit" permsDelete="sys:role:delete" :highlightCurrentRow="true" :stripe="false"
-              :data="pageResult" :columns="columns" :showBatchDelete="false" @handleCurrentChange="handleRoleSelectChange"
-              @findPage="findPage" @handleEdit="handleEdit" @handleDelete="handleDelete">
-    </kt-table>-->
 
     <el-table
-      :data="allCourse.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+      :data="selectedCourseList.slice((currentPage-1)*pagesize,currentPage*pagesize)"
       class="table-wrapper"
       size="mini"
       border>
-      <el-table-column
-        prop="courseNumber"
-        label="课程号"
-      >
-      </el-table-column>
-      <el-table-column
+      <el-table-column width="180"
         prop="courseName"
         label="课程名">
       </el-table-column>
@@ -45,34 +36,37 @@
         prop="score"
         label="学分">
       </el-table-column>
-
-      <el-table-column prop="danwei" width="180"
-                       label="开课单位">
+      <el-table-column
+        label="类型">
+        <template slot-scope="scope">
+          <span>{{scope.row.courseType === '1'?'选修':'必修'}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="roomName"
+                       label="开课院系">
       </el-table-column>
       <el-table-column width="180"
                        label="上课时间">
         <template slot-scope="scope">
-          <div v-for="item in scope.row.time">{{item.date + item.section + item.range}}</div>
+          <div v-for="(item,index) in scope.row.courseDetail" :key="index">{{item.dateName + item.sectionName + item.range}}</div>
         </template>
       </el-table-column>
       <el-table-column
         label="上课地点">
         <template slot-scope="scope">
-          <div v-for="item in scope.row.place">{{item}}</div>
+          <div v-for="item in scope.row.courseDetail">{{item.place}}</div>
         </template>
       </el-table-column>
-      <el-table-column prop="teacher"
+      <el-table-column prop="teacherName"
                        label="上课老师">
       </el-table-column>
-      <el-table-column prop="className"
-                       label="上课班级">
-      </el-table-column>
       <el-table-column
-        fixed="right" width="80"
+        fixed="right" width="120"
         label="操作"
       >
         <template slot-scope="scope">
-          <el-button type="text" size="small" @click="editCourse(scope.row)">修改</el-button>
+          <el-button type="text" size="small" @click="editSelectedCourse(scope.row)">修改</el-button>
+          <el-button  type="text" style="color: red;" size="small" @click="deleteSelectedCourse(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -80,22 +74,40 @@
                 :handleCurrentChange="handleCurrentChange"
                 :currentPage="currentPage" :pagesize="pagesize" :total="total">
     </pegitation>
-    <!-- </el-col> -->
     <!--新增编辑界面-->
     <!--授课老师， 课程类别（选秀，必修），课时，上课时间，限选人数-->
-    <el-dialog v-if="dialogVisible" :title="operation?'新增':'编辑'" width="60%" :visible.sync="dialogVisible" :close-on-click-modal="false">
+    <el-dialog v-if="dialogVisible" :title="operation?'新增选课':'编辑'" width="60%" :visible.sync="dialogVisible" :close-on-click-modal="false">
       <el-form :model="dataForm" label-width="100px" :rules="dataFormRules" ref="dataForm" :size="size" style="height: 300px;">
         <el-scrollbar style="height: 100%">
         <el-form-item label="课程名"  >
-          <el-input v-model="dataForm.courseName"  auto-complete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="开课院系" prop="name">
-          <el-select v-model="dataForm.danwei" placeholder="请选择" style="width: 100%">
+          <el-select v-model="dataForm.courseId" placeholder="请选择课程" @change="getTeacherByCourse"
+                     style="width: 100%" :no-data-text="courseExist?'':'暂无课程信息'">
             <el-option
-              v-for="item in belongOptions"
-              :key="item.belongId"
-              :label="item.belongName"
-              :value="item.belongId">
+              v-for="item in courseAndTeacher"
+              :key="item.courseId"
+              :label="item.courseName"
+              :value="item.courseId">
+            </el-option>
+          </el-select>
+        </el-form-item>
+         <el-form-item label="授课老师"  >
+            <el-select v-model="dataForm.teacherId" placeholder="请选择教师"
+                       style="width: 100%" :no-data-text="teacherExist?'该课程暂无教师':'请先选择课程'">
+              <el-option
+                v-for="item in teacherList"
+                :key="item.teacherId"
+                :label="item.teacherName"
+                :value="item.teacherId">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        <el-form-item label="开课院系" prop="name">
+          <el-select v-model="dataForm.roomId" placeholder="请选择" style="width: 100%" :no-data-text="roomExist?'':'暂无院系'">
+            <el-option
+              v-for="item in allRoom"
+              :key="item.roomId"
+              :label="item.roomName"
+              :value="item.roomId">
             </el-option>
           </el-select>
         </el-form-item>
@@ -105,9 +117,7 @@
             <el-option label="必修"  value="2"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="授课老师"  >
-          <el-input v-model="dataForm.teacher"  auto-complete="off"></el-input>
-        </el-form-item>
+
         <el-form-item label="限选人数"  >
           <el-input v-model="dataForm.capacity"  auto-complete="off"></el-input>
         </el-form-item>
@@ -121,10 +131,10 @@
                 </span>
               </span>
           <div v-for="itemCourse in dataForm.courseDetail">
-          <el-select v-model="itemCourse.dateName" placeholder="请选择" style="width: 20%">
+          <el-select v-model="itemCourse.date" placeholder="请选择" style="width: 20%">
             <el-option :label="item.timeName"  :value="item.timeId" v-for="item in timeOption"></el-option>
           </el-select>
-          <el-select v-model="itemCourse.sectionName" placeholder="请选择" style="width: 20%">
+          <el-select v-model="itemCourse.section" placeholder="请选择" style="width: 20%">
             <el-option :label="item.sectionName"  :value="item.sectionId" v-for="item in sectionOption"></el-option>
           </el-select>
           <el-input style="width: 30%" v-model="itemCourse.place"  auto-complete="off" placeholder="请输入上课地点"></el-input>
@@ -146,8 +156,8 @@
 </template>
 <script>
   import pegitation from '@/views/Core/pegitation'
-  import { format } from "@/utils/datetime"
   import { allCourseChoosed } from '../../utils/allData'
+  import {fuzzyQuery, genID, getNameById} from '../../utils/utils'
   export default {
     components:{
       pegitation
@@ -161,10 +171,10 @@
         pagesize:10,
         currentPage:1,
         total:10,
-        allCourse: allCourseChoosed,
-        belongOptions:[{belongId:'001',belongName:'理学'},{belongId:'002',belongName:'经济系'},
-          {belongId:'003',belongName:'哲学'},{belongId:'004',belongName:'法学'},{belongId:'005',belongName:'管理学'}
-        ],
+        selectedCourseList:[],// 所有的选课列表
+
+        allRoom:[],// 院系
+        roomExist: false,
         timeOption:[{timeId:'monday',timeName:'周一'},{timeId:'tudesday',timeName:'周二'},{timeId:'thirsday',timeName:'周三'},
           {timeId:'fourthday',timeName:'周四'},{timeId:'friday',timeName:'周五'}],
         sectionOption:[{sectionId:'1',sectionName:'1-2节'},{sectionId:'2',sectionName:'3-4节'},{sectionId:'3',sectionName:'5-6节'},
@@ -179,32 +189,27 @@
         },
         // 新增编辑界面数据
         dataForm: {
-          id: 0,
-          remark:'',
+          selectedCourseId:'',
           courseName: '',
-          danwei: '',
+          courseId: '',
+          roomId:'',
+          roomName:'',
           courseType: '1',
           score:'',
-          teacher: '', // 老师
+          teacherId: '', // 老师
+          teacherName: '', // 老师
           capacity:'', // 人数
           courseDetail:[
-            {date:'', section:'', place:'',range:'1-18周',dateName:'',sectionName:''},
-            {date:'', section:'', place:'',range:'1-18周',dateName:'',sectionName:''}
+            {date:'',dateName:'', section:'', place:'',range:'1-18周', dateName:'',sectionName:''},
+            {date:'',dateName:'', section:'', place:'',range:'1-18周',dateName:'',sectionName:''}
           ],
 
 
         },
-        selectRole: {},
-        menuData: [],
-        menuSelections: [],
-        menuLoading: false,
-        authLoading: false,
-        checkAll: false,
-        currentRoleMenus: [],
-        defaultProps: {
-          children: 'children',
-          label: 'name'
-        }
+        courseAndTeacher:[],
+        courseExist: true,
+        teacherList:[], // 教师信息
+        teacherExist: false
       }
     },
     methods: {
@@ -219,134 +224,201 @@
         let obj ={date:'', section:'', place:'',range:'1-18周',dateName:'',sectionName:''}
         this.dataForm.courseDetail.unshift(obj)
       },
+      // 获取所有课程以及课程对应的教师
+      getCourseAndTeacher(){
+        let courseAndTeacher = JSON.parse(localStorage.getItem('adminCourse'))
+        if(courseAndTeacher && courseAndTeacher.length > 0){
+          this.courseAndTeacher = courseAndTeacher
+          this.courseExist = false
+        }else{
+          this.courseAndTeacher =  []
+          this.courseExist = true
+        }
+      },
+      getTeacherByCourse(){
+        this.teacherExist = true
+        this.dataForm.teacherId = ''
+        let allTeacher = JSON.parse(localStorage.getItem('allTeacher'))
+        let teacherInfo =   getNameById(this.dataForm.courseId,'teacherCourse',allTeacher)
+        if(teacherInfo && teacherInfo.length > 0){
+          this.teacherList = teacherInfo
+        }else{
+          this.teacherList = []
+        }
+      },
+      // 获取院系
+      getRoom(){
+        let allRoom =JSON.parse(localStorage.getItem('allRoom'))
+        if(allRoom && allRoom.length > 0){
+          this.allRoom = allRoom
+          this.roomExist = true
+        }else{
+          this.allRoom = []
+          this.roomExist = fasle
+        }
+      },
+      // 获取选课列表
+      getSelectedCourseList(){
+        let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+        if(allSelectedCourse){
+          this.selectedCourseList = allSelectedCourse
+        }else{
+          this.selectedCourseList = []
+        }
+        this.total  =  this.selectedCourseList.length
+      },
+
       // 新增课程
-      addCourse(){
+      addSelectCourse() {
         this.dialogVisible = true
         this.operation = true // 标记是新增
+        this.dataForm = {
+          selectedCourseId: '',
+          courseName: '',
+          courseId: '',
+          roomId: '',
+          roomName: '',
+          courseType: '1',
+          score: '',
+          teacherId: '', // 老师
+          teacherName: '', // 老师
+          capacity: '', // 人数
+          courseDetail: [
+            {date: '', dateName: '', section: '', place: '', range: '1-18周', dateName: '', sectionName: ''},
+            {date: '', dateName: '', section: '', place: '', range: '1-18周', dateName: '', sectionName: ''}
+          ],
+
+        }
       },
 
       // 显示编辑界面
-      editCourse: function (row) {
+      editSelectedCourse: function (row) {
         this.dialogVisible = true
         this.operation = false
-        // this.dataForm = Object.assign({}, params.row)
+        this.dataForm = Object.assign({}, row)
+        this.getTeacherByCourse()
+        this.dataForm.teacherId = row.teacherId
       },
       // 编辑
       submitForm: function () {
         this.$refs.dataForm.validate((valid) => {
           if (valid) {
-            this.$confirm('确认提交吗？', '提示', {}).then(() => {
               this.editLoading = true
               console.log(this.dataForm)
-            /*  let params = Object.assign({}, this.dataForm)
-              this.$api.role.save(params).then((res) => {
-                this.editLoading = false
-                if(res.code == 200) {
-                  this.$message({ message: '操作成功', type: 'success' })
-                  this.dialogVisible = false
-                  this.$refs['dataForm'].resetFields()
-                } else {
-                  this.$message({message: '操作失败, ' + res.msg, type: 'error'})
-                }
-                this.findPage(null)
-              })*/
- /*             courseId:'000',
-                courseNumber: '000',
-                courseName: '高等数学',
-                capacity: 30,
-                status:'0',
-                score:2,
-                danwei:'计算机科学与技术学院',
-                time:[{date:'星期一',section:'第7-8节',range:'1-18周'},{date:'星期五',section:'第7-8节',range:'1-18周'}],
-                place:['4号楼203','4号楼205'],
-                teacher:'李俊',
-                className:'软件工程',*/
-            let allCourse = []
+            let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+              let roomObj = getNameById(this.dataForm.roomId,'roomId',this.allRoom)
+              let teacherObj = getNameById(this.dataForm.teacherId,'teacherId',this.teacherList)
+              let courseObj = getNameById(this.dataForm.courseId,'courseId',this.courseAndTeacher)
+              this.dataForm.courseName  = courseObj[0].courseName
+              this.dataForm.teacherName = teacherObj[0].teacherName
+              this.dataForm.roomName = roomObj[0].roomName
+
+            let selectedCourse = []
               let obj = {
-                courseId: this.genID(5),
+                selectedCourseId: genID(5),
                 courseName: this.dataForm.courseName,
+                courseId: this.dataForm.courseId,
                 capacity: this.dataForm.capacity,
                 score: this.dataForm.score,
-                danwei: this.dataForm.danwei,
-                teacher: this.dataForm.teacher,
+                roomId: this.dataForm.roomId,
+                roomName: this.dataForm.roomName,
+                teacherId: this.dataForm.teacherId,
+                teacherName: this.dataForm.teacherName,
+                courseType: this.dataForm.courseType, // 1 选修  2 必修
                 status:'0',
               }
+              if(this.dataForm.courseDetail && this.dataForm.courseDetail.length > 0){
+                let detailArr = []
+                this.dataForm.courseDetail.forEach(detail=>{
+                  if(detail.section && detail.date && detail.place){
+                    detail.sectionName = getNameById(detail.section,'sectionId',this.sectionOption)[0].sectionName
+                    detail.dateName = getNameById(detail.date,'timeId',this.timeOption)[0].timeName
+                    detailArr.push(detail)
+                  }
+                })
+                obj.courseDetail = detailArr
+              }
               console.log(obj)
-            })
-          }
-        })
-      },
-      genID(length){
-        return Number(Math.random().toString().substr(3,length) + Date.now()).toString(36);
-      },
-      // 获取数据
-      findTreeData: function () {
-        this.menuLoading = true
-        this.$api.menu.findMenuTree().then((res) => {
-          this.menuData = res.data
-          console.log(this.menuData)
-          this.menuLoading = false
-        })
-      },
-      // 角色选择改变监听
-      handleRoleSelectChange(val) {
-        if(val == null || val.val == null) {
-          return
-        }
-        this.selectRole = val.val
-        this.$api.role.findRoleMenus({'roleId':val.val.id}).then((res) => {
-          this.currentRoleMenus = res.data
-          this.$refs.menuTree.setCheckedNodes(res.data)
-        })
-      },
-      // 树节点选择监听
-      handleMenuCheckChange(data, check, subCheck) {
-        if(check) {
-          // 节点选中时同步选中父节点
-          let parentId = data.parentId
-          this.$refs.menuTree.setChecked(parentId, true, false)
-        } else {
-          // 节点取消选中时同步取消选中子节点
-          if(data.children != null) {
-            data.children.forEach(element => {
-              this.$refs.menuTree.setChecked(element.id, false, false)
-            });
-          }
-        }
-      },
-      // 重置选择
-      resetSelection() {
-        this.checkAll = false
-        this.$refs.menuTree.setCheckedNodes(this.currentRoleMenus)
-      },
-      // 全选操作
-      handleCheckAll() {
-        if(this.checkAll) {
-          let allMenus = []
-          this.checkAllMenu(this.menuData, allMenus)
-          this.$refs.menuTree.setCheckedNodes(allMenus)
-        } else {
-          this.$refs.menuTree.setCheckedNodes([])
-        }
-      },
-      // 递归全选
-      checkAllMenu(menuData, allMenus) {
-        menuData.forEach(menu => {
-          allMenus.push(menu)
-          if(menu.children) {
-            this.checkAllMenu(menu.children, allMenus)
-          }
-        });
-      },
+            // })
+            // 新增
+            // 新增
+            if(this.operation){
+              let selectCourseArr = []
+              obj.selectedCourseId = genID(5)
+              if(allSelectedCourse){
+                allSelectedCourse.push(obj)
+                localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+              }else{
+                selectCourseArr.push(obj)
+                localStorage.setItem('allSelectedCourse',JSON.stringify(selectCourseArr))
+              }
+              this.editLoading = false
+              this.$message({ message: '新增成功', type: 'success' })
+              this.dialogVisible = false
+              this.getSelectedCourseList()
+            }else{
+              //修改
+              allSelectedCourse.forEach(item=>{
+                if(item.selectedCourseId === this.dataForm.selectedCourseId){
+                  item.teacherName = this.dataForm.teacherName
+                  item.teacherId = this.dataForm.teacherId
+                  item.courseId = this.dataForm.courseId
+                  item.courseName = this.dataForm.courseName
+                  item.score = this.dataForm.score
+                  item.roomId= this.dataForm.roomId
+                  item.roomName= this.dataForm.roomName
+                  item.courseDetail= this.dataForm.courseDetail
+                  item.courseType = this.dataForm.courseType
+                  item.capacity = this.dataForm.capacity
 
-      // 时间格式化
-      dateFormat: function (row, column, cellValue, index){
-        if(format(row[column.property])=="2018/9/14 12:12:12") return "dasd";
-        else return 2;
+                }
+              })
+              this.editLoading = false
+              this.dialogVisible = false
+              localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+              this.$message({ message: '修改成功', type: 'success' })
+              this.getSelectedCourseList()
+            }
+          }
+        })
+      },
+      filterSearch(){
+        let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+        let onefilt = []
+        if(this.filters.name.trim()){
+          onefilt = fuzzyQuery(allSelectedCourse,this.filters.name.trim(),'courseName')
+          console.log(onefilt)
+        }else{
+          onefilt = allSelectedCourse
+        }
+        this.selectedCourseList = onefilt
+      },
+      deleteSelectedCourse(row){
+        this.$confirm(`确认删除${row.courseName}吗？`, '提示', {}).then(() => {
+          let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+          allSelectedCourse.forEach((item,index)=>{
+            if(item.selectedCourseId=== row.selectedCourseId){
+              allSelectedCourse.splice(index,1)
+            }
+          })
+          localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+          this.$message({ message: '删除成功', type: 'success' })
+          this.getSelectedCourseList()
+        }).catch(()=>{
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        })
       }
+
+
 
     },
     mounted() {
+      this.getCourseAndTeacher()
+      this.getRoom()
+      this.getSelectedCourseList()
     }
   }
 </script>

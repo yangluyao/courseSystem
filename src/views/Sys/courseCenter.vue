@@ -1,17 +1,12 @@
 <template>
+  <!--学生的选课页面-->
   <div class="page-container">
 	<!--工具栏-->
-	<div class="toolbar" style="float:left;padding-top:10px;padding-left:15px;">
+	<div class="toolbar" >
 		<el-form :inline="true" :model="filters" :size="size">
 			<el-form-item>
-				<el-input v-model="filters.name" placeholder="开课单位"></el-input>
+				<el-input v-model="filters.name" placeholder="课程名"></el-input>
 			</el-form-item>
-      <el-form-item>
-        <el-select v-model="filters.status" placeholder="请选择">
-          <el-option label="已满" value="1"></el-option>
-          <el-option label="可选" value="0"></el-option>
-        </el-select>
-      </el-form-item>
 			<el-form-item>
         <el-button size="small"  type="primary" icon="fa fa-search" @click="filterSearch">
           搜索
@@ -20,17 +15,12 @@
 		</el-form>
 	</div>
 	<!--表格内容栏-->
-    <div class="content-wrapper" style="margin-top: 50px" >
+    <div class="content-wrapper">
       <el-table
-                :data="allCourseChoosed.slice((currentPage-1)*pagesize,currentPage*pagesize)"
+                :data="alternativeCourse.slice((currentPage-1)*pagesize,currentPage*pagesize)"
                 class="table-wrapper"
                 size="mini"
                 border>
-        <el-table-column
-          prop="courseNumber"
-          label="课程号"
-          >
-        </el-table-column>
         <el-table-column
           prop="courseName"
           label="课程名">
@@ -45,27 +35,24 @@
           label="学分">
         </el-table-column>
 
-        <el-table-column prop="danwei" width="180"
+        <el-table-column prop="roomName" width="180"
                          label="开课单位">
         </el-table-column>
-        <el-table-column width="180"
+        <el-table-column
                          label="上课时间">
           <template slot-scope="scope">
-            <div v-for="item in scope.row.time">{{item.date + item.section + item.range}}</div>
+            <div v-for="(item,index) in scope.row.courseDetail" :key="index">{{item.dateName + item.sectionName + item.range}}</div>
           </template>
         </el-table-column>
-        <el-table-column
-                         label="上课地点">
+        <el-table-column label="上课地点">
           <template slot-scope="scope">
-            <div v-for="item in scope.row.place">{{item}}</div>
+            <div v-for="(item,index) in scope.row.courseDetail" :key="index">{{item.place}}</div>
           </template>
         </el-table-column>
-        <el-table-column prop="teacher"
+        <el-table-column prop="teacherName"
                          label="上课老师">
         </el-table-column>
-        <el-table-column prop="className"
-                         label="上课班级">
-        </el-table-column>
+
         <el-table-column
           fixed="right" width="80"
           label="操作"
@@ -74,10 +61,10 @@
             <div>
               <div v-if="judgeExist(scope.row)">
                 <el-tag type="success" size="mini">
-                已选
+                  已选
               </el-tag> </div>
               <div v-else>
-                <el-button type="text" size="small" v-if="scope.row.status == '0'" @click="choosed(scope.row)">选课</el-button>
+                <el-button type="text" size="small" v-if="!scope.row.studentInfos || scope.row.studentInfos.length < scope.row.capacity" @click="choosed(scope.row)">选课</el-button>
                 <el-tag v-else type="warning" size="mini">
                   已满
                 </el-tag>
@@ -100,8 +87,7 @@
 import { mapState } from 'vuex'
 import pegitation from "@/views/Core/pegitation"
 import { format } from "@/utils/datetime"
-
-import {allCourseChoosed} from '../../utils/allData'
+import {fuzzyQuery} from "../../utils/utils";
 
 export default {
 	components:{
@@ -114,12 +100,12 @@ export default {
 				name: '',
         status: '0'
 			},
-      ////////////////
       pagesize:10,
       currentPage:1,
-      total:allCourseChoosed.length,
-      allCourseChoosed: allCourseChoosed,
-      haseCourse: []
+      total:0,
+
+      alternativeCourse:[], // 该角色所在系可以选的课程
+      templeteAlternativeCourse:[],// 备用模板
 		}
 	},
   computed:{
@@ -127,18 +113,7 @@ export default {
       user: state=>state.user.users,
     })
   },
-  filters: {
-    existCourse: function (value) {
-       if(this.haseCourse && this.haseCourse.length > 0){
-           return this.haseCourse.find(item=>{
-             item.courseId = value.courseId
-           })
-       }else{
-         return false
-       }
-      return value.charAt(0).toUpperCase() + value.slice(1)
-    }
-  },
+
 	methods: {
     // 分页操作
     handleSizeChange(val) {
@@ -148,62 +123,80 @@ export default {
       this.currentPage = currentPage
     },
     filterSearch(){
-      let templeteCourseData = JSON.parse(JSON.stringify(allCourseChoosed))
-      function fuzzyQuery(list, keyWord) {
-        var reg =  new RegExp(keyWord);
-        var arr = [];
-        for (var i = 0; i < list.length; i++) {
-          if (reg.test(list[i])) {
-            arr.push(list[i]);
-          }
-        }
-        return arr;
-      }
+
       let onefilt = []
       if(this.filters.name.trim()){
-         onefilt = fuzzyQuery(templeteCourseData,this.filters.name.trim())
+        onefilt = fuzzyQuery(this.templeteAlternativeCourse,this.filters.name.trim(),'courseName')
       }else{
-         onefilt = templeteCourseData
+         onefilt = this.templeteAlternativeCourse
       }
-      if(onefilt && onefilt.length > 0){
-        this.allCourseChoosed =  onefilt.filter(item=>{
-          return item.status === this.filters.status
-        })
-      }else{
-        this.allCourseChoosed = []
-      }
+      this.alternativeCourse = onefilt
     },
 
     dataSave(row){
-      let courseSituation =JSON.parse(localStorage.getItem('courseSituation'))
-      if(courseSituation){
-        courseSituation.forEach(item=>{
-          if(item.name === this.user.loginName){
-            item.course.push(row)
-            console.log(item)
+      //选课 1 向该课程加入此学生信息  2 向该学生加入此课程信息
+      let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+      let allStudent =JSON.parse(localStorage.getItem('allStudent'))
+      console.log(row)
+      // 1 向该课程加入此学生信息
+      allSelectedCourse.forEach(course=>{
+        if(course.selectedCourseId === row.selectedCourseId){
+          if(course.studentInfos){
+            course.studentInfos.push(this.user)
           }else{
-            let chosedArr =[]
-            chosedArr.push(row)
-            var stu = {
-              name: this.user.loginName,
-              course:chosedArr
-            }
-            courseSituation.push(stu)
+            let courseArr = []
+            courseArr.push(this.user)
+            course.studentInfos = courseArr
           }
+        }
+      })
+      localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+      // 2 向该学生加入此课程信息
+      allStudent.forEach(stu=>{
+        if(stu.studentId === this.user.studentId){
+          if(stu.studentInfos){
+            stu.studentInfos.push(row)
+          }else{
+            let studentArr = []
+            studentArr.push(row)
+            stu.studentInfos = studentArr
+          }
+        }
+      })
+      localStorage.setItem('allStudent',JSON.stringify(allStudent))
+      this.getAllSelectedCourse()
+    },
+    judgeExist(val){
+     console.log(val)
+      let flag
+      if(val.studentInfos && val.studentInfos.length > 0){
+        flag = val.studentInfos.some(item=>{
+          return item.studentId == this.user.studentId
         })
-        localStorage.setItem('courseSituation',JSON.stringify(courseSituation))
-        this.getHasedCourse()
+      }else{
+        flag = false
       }
-      else{
-        let newobj = [] , newchosedArr =[];
-        newchosedArr.push(row)
-        newobj.push({
-          name: this.user.loginName,
-          course:newchosedArr
-        })
-        localStorage.setItem('courseSituation',JSON.stringify(newobj))
+      console.log(flag)
+      return flag
+    },
+    // 获取所有课程，根据当前登录用户查找出所在系别，找出该系别提供的选课列表
+    getAllSelectedCourse(){
+      let allSelectedCourse =JSON.parse(localStorage.getItem('allSelectedCourse'))
+      if(this.user.roleId === 'student'){
+        let studentRoomId = this.user.studentRoomId
+        if(studentRoomId){
+         let alternativeCourse = allSelectedCourse.filter(course=>{
+            return course.roomId === studentRoomId
+          })
+          this.alternativeCourse = alternativeCourse
+        }else{
+          this.alternativeCourse = []
+        }
+        this.templeteAlternativeCourse = JSON.parse(JSON.stringify(this.alternativeCourse))
+        this.total = this.alternativeCourse.length
       }
     },
+    //点击选课
     choosed(row){
       this.$confirm(`确认选${row.courseName}课程吗?`, '提示', {
         confirmButtonText: '确定',
@@ -222,31 +215,10 @@ export default {
         });
       });
     },
-    // 获取已选课程
-    getHasedCourse(){
-      let courseSituation = JSON.parse(localStorage.getItem('courseSituation'))
-      if(courseSituation){
-        courseSituation.forEach(item=>{
-          if(item.name === this.user.loginName){
-            this.haseCourse = item.course;
-          }
-        })
-      }
-
-    },
-    judgeExist(val){
-      let a =''
-      if(this.haseCourse && this.haseCourse.length > 0){
-       a=   this.haseCourse.find(item=>{
-          return item.courseId === val.courseId
-        })
-      }
-      return a
-    }
 
 	},
 	mounted() {
-this.getHasedCourse()
+    this.getAllSelectedCourse()
 	}
 }
 </script>
