@@ -86,14 +86,14 @@
           label="所属院系">
         </el-table-column>
 
-        <!--<el-table-column
+        <el-table-column
           fixed="right" width="120"
           label="操作"
         >
           <template slot-scope="scope">
-            <el-button type="text" size="small" @click="editSelectedCourse(scope.row)">已选学生列表</el-button>
+            <el-button type="text" style="color: red" size="small" @click="removeStuFromCourse(scope.row)">移出该学生</el-button>
           </template>
-        </el-table-column>-->
+        </el-table-column>
       </el-table>
       <div slot="footer" class="dialog-footer" >
         <el-button :size="size" @click.native="studentDiaolg = false">取消</el-button>
@@ -139,8 +139,9 @@
         addStuDialog:false,
         unHasedStu:[],
         checkedStudent:[], // 选中的学生
-        maxNum:0,
-        checkedCourse:{}
+        maxNum:0, // 最多能选几人
+        checkedCourse:{},
+        courseInfo:{}, // 点学生列表时点中的课程
 
 
       }
@@ -180,6 +181,7 @@
       viewStudent(row){
         this.studentDiaolg = true
         console.log(row)
+        this.courseInfo = row
         this.studentList = row.studentInfos
       },
       addStuToHasCourse(row){
@@ -188,13 +190,10 @@
         this.addStuDialog =true;
         this.studentList = row.studentInfos
         if(this.studentList){
-          console.log(row.capacity)
-          console.log(this.studentList.length)
           this.maxNum = Number(row.capacity) -  this.studentList.length
         }else{
-          this.maxNum = row.capacity
+          this.maxNum =Number( row.capacity)
         }
-        console.log(this.maxNum)
 
         this.studentList = row.studentInfos?row.studentInfos: []
         let allStudent = JSON.parse(localStorage.getItem('allStudent'))
@@ -204,13 +203,13 @@
       },
       confirmAdd(){
         console.log(this.checkedStudent)
-        let checkedStu =[]
+        let checkedStu =[] // 存放所有选中的学生信息
         this.checkedStudent.forEach(item=>{
           let arrObj =  getNameById(item, 'studentId',this.unHasedStu)
           checkedStu.push(arrObj[0])
         })
-        console.log(checkedStu)
-        // let tempCheckedStu = JSON.parse(JSON.stringify(checkedStu))
+        console.log('选中的学生信息',checkedStu)
+        let tempCheckedStu = JSON.parse(JSON.stringify(checkedStu))
         // 该学生 添加这门课
         checkedStu.forEach(stu=>{
           if(stu.studentInfos){
@@ -221,7 +220,7 @@
             stu.studentInfos = tempArr
           }
         })
-
+        console.log('选中的加入课程信息',checkedStu)
         let allStudent = JSON.parse(localStorage.getItem('allStudent'))
          allStudent.forEach(all=>{
           checkedStu.forEach(check=>{
@@ -237,12 +236,74 @@
         localStorage.setItem('allStudent',JSON.stringify(allStudent))
 
         // 该课程 添加选中的学生
-/*        console.log(this.checkedCourse)
-        if(this.checkedCourse.studentInfos){
+        console.log(this.checkedCourse)
+/*        if(this.checkedCourse.studentInfos){
           this.checkedCourse.studentInfos.concat(tempCheckedStu)
         }else{
           this.checkedCourse.studentInfos =tempCheckedStu
         }*/
+        console.log('tempChecked',tempCheckedStu)
+        console.log(this.checkedCourse)
+        let allSelectedCourse = JSON.parse(localStorage.getItem('allSelectedCourse'))
+        allSelectedCourse.forEach(item=>{
+         if(item.selectedCourseId === this.checkedCourse.selectedCourseId){
+           console.log(item)
+         console.log( this.checkedCourse.studentInfos)
+           if(item.studentInfos){
+             item.studentInfos =item.studentInfos.concat(tempCheckedStu)
+           }else{
+             item.studentInfos = tempCheckedStu
+           }
+
+         }
+        })
+        console.log('课程信息',allSelectedCourse)
+        localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+        this.getSelectedCourseList()
+        this.addStuDialog = false
+      },
+      // 从课程中移除该学生
+      removeStuFromCourse(row){
+        console.log(row)
+        console.log(this.courseInfo)
+        // 1 从该课程移出此学生  2 从学生的选课但移出该课程
+        this.$confirm(`确认从${this.courseInfo.courseName}移除${row.studentName}吗？`, '提示', {}).then(() => {
+          let allStudent =JSON.parse(localStorage.getItem('allStudent'))
+          // 2 从学生的选课但移出该课程
+          allStudent.forEach((item,index)=>{
+            if(item.studentId=== row.studentId){
+              console.log(item.studentInfos)
+              item.studentInfos.forEach((course,courseIndex)=>{
+                if(course.selectedCourseId === this.courseInfo.selectedCourseId){
+                  item.studentInfos.splice(courseIndex,1)
+                }
+              })
+              console.log(item)
+            }
+          })
+          localStorage.setItem('allStudent',JSON.stringify(allStudent))
+          // 1 从该课程移出此学生
+          let allSelectedCourse = JSON.parse(localStorage.getItem('allSelectedCourse'))
+          allSelectedCourse.forEach(se=>{
+            if(se.selectedCourseId === this.courseInfo.selectedCourseId){
+              se.studentInfos.forEach((student,studentIndex)=>{
+                if(student.studentId === row.studentId){
+                  se.studentInfos.splice(studentIndex,1)
+                }
+                console.log(se)
+              })
+            }
+          })
+          console.log(allSelectedCourse)
+          localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
+          this.getSelectedCourseList()
+          this.studentDiaolg = false
+        }).catch(()=>{
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        })
       }
 
 

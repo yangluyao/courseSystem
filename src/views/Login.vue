@@ -28,7 +28,7 @@ import { mapState } from 'vuex'
 import Cookies from "js-cookie"
 import ThemePicker from "@/components/ThemePicker"
 import LangSelector from "@/components/LangSelector"
-import { loginInfo,allStudent,allTeacher,allRoom,adminCourse, studentMenu,teacherMenu,superiorTeacherMenu,adminMenu } from  '../utils/allData.js'
+import { loginInfo,allStudent,allTeacher,allRoom,adminCourse,allSelectedCourse, studentMenu,teacherMenu,superiorTeacherMenu,adminMenu } from  '../utils/allData.js'
 export default {
   name: 'Login',
   components:{
@@ -162,6 +162,7 @@ export default {
       let localAllStudent = JSON.parse(localStorage.getItem('allStudent'))
       let localAllTeacher = JSON.parse(localStorage.getItem('allTeacher'))
       let localadminCourse = JSON.parse(localStorage.getItem('adminCourse'))
+      let localAllSelectedCourse = JSON.parse(localStorage.getItem('allSelectedCourse'))
       if( !localAllRoom){
         localStorage.setItem('allRoom',JSON.stringify(allRoom))
       }
@@ -173,6 +174,9 @@ export default {
       }
       if( !localadminCourse){
         localStorage.setItem('adminCourse',JSON.stringify(adminCourse))
+      }
+      if( !localAllSelectedCourse){
+        localStorage.setItem('allSelectedCourse',JSON.stringify(allSelectedCourse))
       }
 
     }
