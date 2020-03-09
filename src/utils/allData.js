@@ -93,7 +93,12 @@ export const loginInfo = [
   }
 ]
 // 各个角色的菜单
-export const adminMenu = [ {
+export const adminMenu = [   {
+  menuName: '首页',
+  menuUrl:'/' ,
+  menuId: '014',
+  icon:'iconfont iconhome'
+},{
   menuName: '课程管理',
   menuUrl:'/admin/addCourse' ,
   menuId: '0001',
@@ -114,27 +119,39 @@ export const adminMenu = [ {
   menuId: '0004',
   icon:'iconfont iconjiaoshi'
 }]
-export const teacherMenu = [ {
+export const teacherMenu = [
+  {
+    menuName: '首页',
+    menuUrl:'/' ,
+    menuId: '013',
+    icon:'iconfont iconhome'
+  },{
   menuName: '课程详情', // 查看自己的课程分配以及选了这门课的学生
   menuUrl:'/ordinary/courseDetail' ,
   menuId: '2221',
-  icon:''
+  icon:'iconfont iconxiangqing'
 },{
   menuName: '我的学生',
   menuUrl:'/ordinary/myStudent' ,
   menuId: '2222',
-  icon:''
+  icon:'iconfont iconwodexiaoxi'
 }]
-export const studentMenu = [{
+export const studentMenu = [
+  {
+    menuName: '首页',
+    menuUrl:'/' ,
+    menuId: '012',
+    icon:'iconfont iconhome'
+  },{
   menuName: '选课中心',
   menuUrl:'/courseCenter' ,
   menuId: '2221',
-  icon:''
+  icon:'iconfont iconhuodongzhongxin'
 },{
   menuName: '我的选课',
   menuUrl:'/myCourse' ,
   menuId: '2222',
-  icon:''
+  icon:'iconfont iconwode-'
 }]
 export const superiorTeacherMenu = [  {
   menuName: '新建选课',

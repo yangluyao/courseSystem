@@ -92,9 +92,6 @@ export default {
             return  loginer.studentName === this.loginForm.account
           })
           if(studentLogin){
-       /*     isLogin= {
-              loginName: this.loginForm.account,roleId:'student',roomId:loginMoreInfo.studentRoomId,roomName:loginMoreInfo.studentRoomName
-            }*/
             isLogin = loginMoreInfo
             haveAccount = true
           }else{

@@ -5,7 +5,10 @@
           <img class="avatar" :src="require('@/assets/user.png')" />
         </div>
         <div class="name-role">
-          <span class="sender">{{ user.loginName }} - {{ user.roleName }}</span>
+          <span class="sender" v-if="user.roleId ==='student'">{{ user.studentName }} - {{ user.studentRoomName }}</span>
+          <span class="sender" v-else-if="user.roleId ==='teacher'">{{ user.teacherName }} - {{ user.roleId }}</span>
+          <span class="sender" v-else-if="user.roleId ==='admin'">{{ user.loginName }}</span>
+          <span class="sender" v-else>{{ user.loginName }}</span>
         </div>
 
     </div>

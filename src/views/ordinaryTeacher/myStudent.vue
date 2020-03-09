@@ -7,7 +7,6 @@
       <el-card class="box-card" style="margin-top: 20px;">
         <div slot="header" class="clearfix">
           <span>我的学生</span>
-          <el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
         </div>
         <div>
           <el-table

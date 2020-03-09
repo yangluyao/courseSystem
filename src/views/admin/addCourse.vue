@@ -26,11 +26,6 @@
         label="课程名">
       </el-table-column>
       <el-table-column
-        prop="score"
-        label="学分">
-      </el-table-column>
-
-      <el-table-column
         fixed="right" width="100"
         label="操作"
       >
@@ -53,9 +48,6 @@
         <el-form-item label="课程名" >
           <el-input v-model="dataForm.courseName"  auto-complete="off"></el-input>
         </el-form-item>
-          <el-form-item label="学分"  >
-            <el-input v-model="dataForm.score"  auto-complete="off"></el-input>
-          </el-form-item>
         </el-scrollbar>
       </el-form>
       <div slot="footer" class="dialog-footer" >

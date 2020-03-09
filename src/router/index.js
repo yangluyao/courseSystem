@@ -18,6 +18,7 @@ import studentManage from "../views/admin/studentManage";
 import courseDetail from "../views/ordinaryTeacher/courseDetail";
 import myStudent from "../views/ordinaryTeacher/myStudent";
 import selectedCourseManage from "../views/teacher/selectedCourseManage";
+import shouye from "../views/shouye";
 
 Vue.use(Router)
 
@@ -28,6 +29,15 @@ const router = new Router({
       name: '首页',
       component: Home,
       children: [
+        {
+          path: '',
+          name: '系统介绍',
+          component: shouye,
+          meta: {
+            icon: 'fa fa-home fa-lg',
+            index: 0
+          }
+        },
         // 学生角色
        {
           path:'/myCourse',
