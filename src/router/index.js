@@ -25,12 +25,12 @@ Vue.use(Router)
 const router = new Router({
   routes: [
     {
-      path: '/',
+      path: '/s',
       name: '首页',
       component: Home,
       children: [
         {
-          path: '',
+          path: '/home',
           name: '系统介绍',
           component: shouye,
           meta: {
@@ -131,7 +131,7 @@ const router = new Router({
       ]
     },
     {
-      path: '/login',
+      path: '/',
       name: '登录',
       component: Login
     },

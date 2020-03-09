@@ -125,7 +125,7 @@ export default {
           this.loading = false
           this.$store.commit('setUserInfo',isLogin)
           this.$store.commit('setNavTree',menu)
-          this.$router.push('/')
+          this.$router.push('/home')
         }else{
           this.loading = false
           this.$message({
